@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title> </title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#e6eaf2; --surface:#f8f9fd; --ink:#141b2d; --muted:#5d667d; --line:#d0d7e5;
+    --accent:#4357f0; --accent-ink:#ffffff; --danger:#b3261e;
+    --shipped:#176c42; --shipped-bg:#d9f0e4;
+    --today:#1a56a6;   --today-bg:#d9e8fa;
+    --soon:#8a5a00;    --soon-bg:#fbebc4;
+    --waiting:#8a3434; --waiting-bg:#f7dcdc;
+    --display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+    --body:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0e1220; --surface:#171c2e; --ink:#eef0f8; --muted:#97a0b8; --line:#283049;
+      --accent:#8c99ff; --accent-ink:#0e1220; --danger:#f2a39d;
+      --shipped:#72d9a3; --shipped-bg:#173a2a;
+      --today:#86bdf5;   --today-bg:#182f4a;
+      --soon:#f2c860;    --soon-bg:#3d3212;
+      --waiting:#f4a0a0; --waiting-bg:#40202a;
+    }
+  }
+  * { box-sizing:border-box; }
+  html, body { margin:0; min-height:100%; }
+  body { background:var(--bg); color:var(--ink); font-family:var(--body); line-height:1.5; }
+  button, input, select { font:inherit; color:inherit; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  /* ---------- hidden lock screen ---------- */
+  .lock { position:fixed; inset:0; z-index:10; background:#0a0e1a; display:grid; place-items:center;
+    transition:opacity .6s ease, visibility .6s; }
+  .lock.gone { opacity:0; visibility:hidden; pointer-events:none; }
+  .lock input { width:60%; max-width:320px; height:64px; background:transparent; border:0; text-align:center;
+    color:transparent; caret-color:rgba(255,255,255,.28); font-size:1.4rem; outline:none; }
+  .lock input:focus-visible { outline:none; }
+
+  /* ---------- app ---------- */
+  .app { max-width:820px; margin:0 auto; padding:36px 18px 64px; animation:rise .7s ease both; }
+  @keyframes rise { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { .app { animation:none; } .lock { transition:none; } }
+
+  header { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:26px; }
+  h1 { font-family:var(--display); font-weight:800; font-size:clamp(2.2rem, 7vw, 3.4rem); line-height:1; margin:0;
+    letter-spacing:-.03em; }
+  .tag { margin:8px 0 0; color:var(--muted); }
+  .lockbtn { border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:7px 16px;
+    cursor:pointer; font-weight:500; }
+  .lockbtn:hover { border-color:var(--ink); }
+
+  .stats { display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; margin-bottom:18px; }
+  .stat { text-align:left; background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:12px 14px; cursor:pointer; }
+  .stat b { display:block; font-family:var(--display); font-size:1.7rem; line-height:1.1; }
+  .stat span { font-size:.82rem; color:var(--muted); }
+  .stat[aria-pressed="true"] { background:var(--ink); border-color:var(--ink); }
+  .stat[aria-pressed="true"] b { color:var(--bg); }
+  .stat[aria-pressed="true"] span { color:var(--bg); opacity:.75; }
+  @media (max-width:640px) { .stats { grid-template-columns:repeat(3, 1fr); } }
+
+  form { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+  form input, form select { background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    padding:11px 13px; }
+  form input { flex:1 1 150px; min-width:0; }
+  form select { flex:1 1 160px; }
+  .add { background:var(--accent); color:var(--accent-ink); border:0; border-radius:10px; padding:11px 22px;
+    font-weight:700; cursor:pointer; }
+  .add:hover { filter:brightness(1.08); }
+
+  .list { background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .row { display:grid; grid-template-columns:1.1fr 1.3fr 1.1fr auto; gap:12px; align-items:center;
+    padding:13px 16px; border-bottom:1px solid var(--line); }
+  .row:last-child { border-bottom:0; }
+  .user { font-weight:700; overflow-wrap:anywhere; }
+  .item { color:var(--muted); overflow-wrap:anywhere; }
+  .row select { width:100%; border:0; border-radius:999px; padding:6px 12px; font-weight:700; font-size:.85rem; cursor:pointer; }
+  select.shipped { color:var(--shipped); background:var(--shipped-bg); }
+  select.today   { color:var(--today);   background:var(--today-bg); }
+  select.soon    { color:var(--soon);    background:var(--soon-bg); }
+  select.waiting { color:var(--waiting); background:var(--waiting-bg); }
+  .del { background:none; border:0; color:var(--danger); cursor:pointer; padding:6px 8px; border-radius:8px; font-size:.88rem; }
+  .del:hover { background:var(--bg); }
+  .empty { padding:28px 16px; color:var(--muted); text-align:center; }
+  @media (max-width:560px) {
+    .row { grid-template-columns:1fr auto; row-gap:6px; }
+    .row .status { grid-column:1 / 2; }
+    .row .delwrap { grid-row:1; grid-column:2; }
+  }
+  .count { color:var(--muted); font-size:.88rem; margin:12px 2px 0; }
+</style>
+</head>
+<body>
+
+<div class="lock" id="lock">
+  <input id="key" type="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label=" " autofocus>
+</div>
+
+<div class="app" id="app" hidden>
+  <header>
+    <div>
+      <h1>featherbx.lol</h1>
+      <p class="tag">Orders and shipping status</p>
+    </div>
+    <button class="lockbtn" id="lockBtn" type="button">Hide</button>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <form id="addForm">
+    <input id="user" placeholder="@username" required autocomplete="off">
+    <input id="item" placeholder="Item (e.g. Limo Hoodie)" required autocomplete="off">
+    <select id="status" aria-label="Status"></select>
+    <button class="add" type="submit">Add order</button>
+  </form>
+
+  <div class="list" id="rows"></div>
+  <p class="count" id="count"></p>
+</div>
+
+<script>
+  const SECRET = "hala";
+  const STATUS = { soon:"Ships Monday", today:"Shipping today", shipped:"Shipped", waiting:"Waiting for response" };
+  const SHORT  = { soon:"Ships Monday", today:"Today", shipped:"Shipped", waiting:"Waiting" };
+  const KEY = "orderTracker.v1";
+  const defaults = [
+    { id:1, user:"@nhdorfman",    item:"Limo Hoodie",        status:"soon" },
+    { id:2, user:"@laidm_179",    item:"Dark Oatmeal Pants", status:"today" },
+    { id:3, user:"@ohiorizz3153", item:"Dark Oatmeal Pants", status:"waiting" },
+    { id:4, user:"@djthegoat_",   item:"Dark Oatmeal Pants", status:"shipped" },
+    { id:5, user:"@alipa_601",    item:"Limo Hoodie",        status:"soon" }
+  ];
+
+  /* ---------- lock / unlock ---------- */
+  const lockEl = document.getElementById("lock");
+  const keyEl  = document.getElementById("key");
+  const appEl  = document.getElementById("app");
+  let locked = true;
+
+  function unlock() {
+    locked = false;
+    keyEl.value = ""; keyEl.blur();
+    appEl.hidden = false;
+    lockEl.classList.add("gone");
+    document.title = "featherbx.lol";
+  }
+  function relock() {
+    locked = true;
+    appEl.hidden = true;
+    document.title = " ";
+    lockEl.classList.remove("gone");
+    keyEl.value = "";
+    keyEl.focus();
+  }
+  keyEl.addEventListener("input", () => {
+    const v = keyEl.value.toLowerCase();
+    if (v.endsWith(SECRET)) unlock();
+    else if (v.length > 12) keyEl.value = v.slice(-3);
+  });
+  document.addEventListener("keydown", () => { if (locked) keyEl.focus(); });
+  lockEl.addEventListener("click", () => keyEl.focus());
+  document.getElementById("lockBtn").addEventListener("click", relock);
+
+  /* ---------- data ---------- */
+  let orders = load();
+  let filter = "all";
+  function load() {
+    try { const s = localStorage.getItem(KEY); if (s) return JSON.parse(s); } catch (e) {}
+    return defaults.slice();
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(orders)); } catch (e) {} }
+  const esc = s => s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const options = sel => Object.entries(STATUS)
+    .map(([k, v]) => `<option value="${k}"${k === sel ? " selected" : ""}>${v}</option>`).join("");
+
+  document.getElementById("status").innerHTML = options("soon");
+
+  /* ---------- render ---------- */
+  function render() {
+    const counts = { all: orders.length };
+    Object.keys(STATUS).forEach(k => counts[k] = orders.filter(o => o.status === k).length);
+    document.getElementById("stats").innerHTML = [["all","All"], ...Object.entries(SHORT)]
+      .map(([k, label]) => `<button type="button" class="stat" data-filter="${k}" aria-pressed="${k === filter}">
+        <b>${counts[k]}</b><span>${label}</span></button>`).join("");
+
+    const list = filter === "all" ? orders : orders.filter(o => o.status === filter);
+    document.getElementById("rows").innerHTML = list.length
+      ? list.map(o => `
+        <div class="row">
+          <div class="user">${esc(o.user)}</div>
+          <div class="item">${esc(o.item)}</div>
+          <div class="status"><select class="${o.status}" data-id="${o.id}" aria-label="Status for ${esc(o.user)}">${options(o.status)}</select></div>
+          <div class="delwrap"><button class="del" data-del="${o.id}" aria-label="Remove ${esc(o.user)}">Remove</button></div>
+        </div>`).join("")
+      : `<div class="empty">Nothing here yet.</div>`;
+    document.getElementById("count").textContent = `Showing ${list.length} of ${orders.length}`;
+  }
+
+  document.getElementById("stats").addEventListener("click", e => {
+    const b = e.target.closest("[data-filter]"); if (!b) return;
+    filter = b.dataset.filter; render();
+  });
+  document.getElementById("addForm").addEventListener("submit", e => {
+    e.preventDefault();
+    let user = document.getElementById("user").value.trim();
+    const item = document.getElementById("item").value.trim();
+    if (!user || !item) return;
+    if (!user.startsWith("@")) user = "@" + user;
+    orders.push({ id: Date.now(), user, item, status: document.getElementById("status").value });
+    save(); render(); e.target.reset(); document.getElementById("user").focus();
+  });
+  document.getElementById("rows").addEventListener("change", e => {
+    const sel = e.target.closest("select"); if (!sel) return;
+    const o = orders.find(x => x.id === Number(sel.dataset.id));
+    if (o) { o.status = sel.value; save(); render(); }
+  });
+  document.getElementById("rows").addEventListener("click", e => {
+    const b = e.target.closest("[data-del]"); if (!b) return;
+    const o = orders.find(x => x.id === Number(b.dataset.del));
+    if (o && confirm(`Remove ${o.user}'s order?`)) { orders = orders.filter(x => x.id !== o.id); save(); render(); }
+  });
+
+  render();
+  keyEl.focus();
+</script>
+</body>
+</html>
